@@ -505,7 +505,7 @@ input,select{font-family:inherit}
   <section style="max-width: 1240px; margin: 0 auto; padding: 100px 24px; display: flex; flex-wrap: wrap; gap: 64px; align-items: center">
     <div id="video" style="flex: 1.2 1 520px; min-width: 0">
       <!-- PLAYER DO YOUTUBE (no HTML final vira o vídeo real) -->
-      <div style="position: relative; width: 100%; aspect-ratio: 16 / 9; border-radius: 22px; overflow: hidden; background: #4A1A31; box-shadow: 0 30px 60px rgba(94,18,54,0.28)"><iframe data-src="https://www.youtube.com/embed/t0XhEiTRLLg?autoplay=1&mute=1&loop=1&playlist=t0XhEiTRLLg&playsinline=1&rel=0&modestbranding=1" title="Vídeo da Dra. Érica Jasmim" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen style="position: absolute; inset: 0; width: 100%; height: 100%; border: 0"></iframe></div>
+      <div style="position: relative; width: 100%; aspect-ratio: 16 / 9; border-radius: 22px; overflow: hidden; background: #4A1A31; box-shadow: 0 30px 60px rgba(94,18,54,0.28)"><iframe data-src="https://www.youtube.com/embed/t0XhEiTRLLg?autoplay=1&mute=0&loop=1&playlist=t0XhEiTRLLg&playsinline=1&rel=0&modestbranding=1&enablejsapi=1" title="Vídeo da Dra. Érica Jasmim" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen style="position: absolute; inset: 0; width: 100%; height: 100%; border: 0"></iframe></div>
       <div style="margin-top: 18px; display: flex; gap: 12px; align-items: center">
         <span style="width: 10px; height: 10px; border-radius: 50%; background: #8E1F52"></span>
         <span style="font-size: 14px; color: #6E5560">Dra. Érica Jasmim · Medicina Fetal e Ultrassonografia · RQE 31108</span>
@@ -1188,6 +1188,25 @@ Volta Redonda – RJ · CEP 27260-200</span></a>
 </div>
 <script>
 (function(){
+  var VOL=50, apiReady=false, waiting=[];
+  window.onYouTubeIframeAPIReady=function(){apiReady=true;waiting.splice(0).forEach(ytAttach);};
+  var tag=document.createElement('script');tag.src='https://www.youtube.com/iframe_api';document.head.appendChild(tag);
+  function armUnmute(pl){
+    function go(){document.removeEventListener('pointerdown',go,true);document.removeEventListener('keydown',go,true);
+      try{pl.unMute();pl.setVolume(VOL);pl.playVideo();}catch(e){}}
+    document.addEventListener('pointerdown',go,true);document.addEventListener('keydown',go,true);
+  }
+  function ytAttach(f){
+    if(!apiReady||!window.YT||!YT.Player){if(waiting.indexOf(f)<0)waiting.push(f);return;}
+    if(f._yt)return;
+    f._yt=new YT.Player(f,{events:{onReady:function(e){
+      var pl=e.target;
+      try{pl.setVolume(VOL);pl.unMute();pl.playVideo();}catch(err){}
+      setTimeout(function(){
+        try{ if(pl.getPlayerState()!==1){ pl.mute(); pl.playVideo(); armUnmute(pl); } else if(pl.isMuted()){ armUnmute(pl); } }catch(err){}
+      },1500);
+    }}});
+  }
   function show(){
     var h=(location.hash.replace('#/','')||'inicio');
     var pgs=document.querySelectorAll('.pg'),found=false;
@@ -1195,8 +1214,8 @@ Volta Redonda – RJ · CEP 27260-200</span></a>
     if(!found)pgs[0].classList.add('on');
     document.querySelectorAll('iframe[data-src]').forEach(function(f){
       var vis=f.closest('.pg').classList.contains('on');
-      if(vis&&!f.getAttribute('src'))f.setAttribute('src',f.dataset.src);
-      if(!vis&&f.getAttribute('src'))f.removeAttribute('src');
+      if(vis&&!f.getAttribute('src')){f.setAttribute('src',f.dataset.src);ytAttach(f);}
+      if(!vis&&f.getAttribute('src')){f.removeAttribute('src');f._yt=null;}
     });
     document.querySelectorAll('details.mobile-menu').forEach(function(d){d.open=false;});
     window.scrollTo(0,0);
